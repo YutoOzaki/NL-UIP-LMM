@@ -77,12 +77,12 @@ model {
   // non-local prior term
   matrix[p, p] invXVX = inverse(XVX);
   real var_q = (2*N*g)*invXVX[q, q];
-  real lpdf_likelihood_anal = log((beta[q] - dlt_q)^2 / var_q);
+  real lpdf_likelihood_anal = log((beta[q] - dlt_q)^2 / var_q + 1e-15);
 
   // evaluate likelihood
   real Q = quad_form_sym(XVX, beta) - 2*dot_product(beta, XVy) + yVy;
 
-  lpdf_likelihood_anal = -0.5*(2*N)*ln2pi - 0.5*lndetV - 0.5*Q;
+  lpdf_likelihood_anal += -0.5*(2*N)*ln2pi - 0.5*lndetV - 0.5*Q;
   
   target += lpdf_likelihood_anal;
 }
