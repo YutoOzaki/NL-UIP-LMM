@@ -37,14 +37,16 @@ parameters {
   real<lower=0, upper=1> u;
 }
 
+transformed parameters {
+  real g = (1 - u)/u;
+}
+
 model {
   // priors
   sgm ~ student_t(2, 0, 1000);
   s_1 ~ student_t(2, 0, 1000);
   s_2 ~ student_t(2, 0, 1000);
-
   u ~ beta(d_1, d_1*d_2);
-  real g = (1 - u)/u;
 
   // Analytical and efficient likelihood evaluation
   real a = sgm^2;
@@ -72,12 +74,12 @@ model {
   }
   
   // sample beta
-  beta ~ multi_normal_prec(m, XVX/(2*N*g));
+  matrix[p, p] Lmd = XVX/(2*N*g);
+  beta ~ multi_normal_prec(m, Lmd);
 
   // non-local prior term
-  matrix[p, p] invXVX = inverse(XVX);
-  real var_q = (2*N*g)*invXVX[q, q];
-  real lpdf_likelihood_anal = log((beta[q] - dlt_q)^2 / var_q + 1e-15);
+  matrix[p, p] invLmd = inverse(Lmd);
+  real lpdf_likelihood_anal = log((beta[q] - dlt_q)^2 / invLmd[q, q]);
 
   // evaluate likelihood
   real Q = quad_form_sym(XVX, beta) - 2*dot_product(beta, XVy) + yVy;
