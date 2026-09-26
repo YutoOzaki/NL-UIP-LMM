@@ -42,7 +42,7 @@ transformed parameters {
 }
 
 model {
-  // priors
+  // priors for variance components
   sgm ~ student_t(2, 0, 1000);
   s_1 ~ student_t(2, 0, 1000);
   s_2 ~ student_t(2, 0, 1000);
@@ -73,18 +73,16 @@ model {
     yVy -= w3*yy_g[i];
   }
   
-  // sample beta
+  // prior for beta with non-local term
   matrix[p, p] Lmd = XVX/(2*N*g);
   beta ~ multi_normal_prec(m, Lmd);
-
-  // non-local prior term
+  
   matrix[p, p] invLmd = inverse(Lmd);
-  real lpdf_likelihood_anal = log((beta[q] - dlt_q)^2 / invLmd[q, q]);
+  target += log((beta[q] - dlt_q)^2 / invLmd[q, q]);
 
   // evaluate likelihood
   real Q = quad_form_sym(XVX, beta) - 2*dot_product(beta, XVy) + yVy;
-
-  lpdf_likelihood_anal += -0.5*(2*N)*ln2pi - 0.5*lndetV - 0.5*Q;
+  real lpdf_likelihood_anal = -0.5*(2*N)*ln2pi - 0.5*lndetV - 0.5*Q;
   
   target += lpdf_likelihood_anal;
 }
